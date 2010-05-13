@@ -116,6 +116,7 @@ public class DictionaryService {
 		mThread.start();
 	}
 	
+	private static final int MAX_WAIT = 3000;
 	private void stopSearching() {
 		if(mState == STATE_DONE) {
 			return;
@@ -124,7 +125,7 @@ public class DictionaryService {
 		mState = STATE_STOP;
 		while(mState != STATE_DONE) {
 			try {
-				Thread.sleep(50);
+				mThread.join(MAX_WAIT);
 			} catch (InterruptedException e) {
 				if(mListener != null) 
 					mListener.onError(e);
