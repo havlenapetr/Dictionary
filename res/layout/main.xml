@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@drawable/white_background">           
+
+		        <EditText 
+			        android:id="@+id/edtSearch"
+		            android:layout_width="fill_parent"
+		            android:layout_height="wrap_content"
+		            android:autoText="true"
+		            android:singleLine="true"
+		            android:maxLength="40"/>
+		            
+		        <ScrollView
+	            	android:layout_width="fill_parent"
+	            	android:layout_height="wrap_content">
+	                    
+	                    <TextView
+	                            android:id="@+id/txtResult"
+	                            android:layout_width="fill_parent"
+	                            android:layout_height="fill_parent"
+	                            android:textColor="@drawable/text_color_black"
+	                            android:textSize="14sp"
+	                            android:textStyle="bold"
+	                            android:paddingLeft="3dip"
+	                            android:paddingRight="3dip"
+	                            android:layout_alignParentRight="true"
+	                            android:layout_alignParentTop="true"/>
+	            </ScrollView>
+</LinearLayout>

@@ -1,0 +1,1 @@
+download gcide-entries.xml from: http://dl.linuxphone.ru/openmoko/qtmoko/packages/gcide-entries.xml.gz and unpack it to root of phone's sdcard and then run app
