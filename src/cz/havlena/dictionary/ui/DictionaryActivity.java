@@ -1,4 +1,4 @@
-package cz.havlena.dictionary.gui;
+package cz.havlena.dictionary.ui;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,6 +10,7 @@ import org.xml.sax.SAXException;
 import cz.havlena.dictionary.DictionaryElement;
 import cz.havlena.dictionary.DictionaryService;
 import cz.havlena.dictionary.IDictionaryService;
+import cz.havlena.dictionary.ui.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;
