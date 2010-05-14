@@ -10,6 +10,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.xml.sax.SAXException;
 
+import android.util.Log;
+
 public class DictionaryService {
 	
 	private static int 					UNCOMPARABLE_CHARS = 0x12345678;
@@ -22,6 +24,7 @@ public class DictionaryService {
 	
 	public static final int 			STATE_DONE = 1;
 	public static final int 			STATE_SEARCHING = 2;
+	public static final int 			STATE_SEARCHING_COMPLETED = 4;
 	public static final int 			STATE_STOP = 3;
 
 	public static final int 			PHASE_FINDING_SOME_EXPRESSION = 1;
@@ -126,6 +129,7 @@ public class DictionaryService {
 		while(mState != STATE_DONE) {
 			try {
 				mThread.join(MAX_WAIT);
+				mThread = null;
 			} catch (InterruptedException e) {
 				if(mListener != null) 
 					mListener.onError(e);
@@ -180,13 +184,13 @@ public class DictionaryService {
 	 */
 	public void search(String key, int maxResults, int format) throws IOException {
 		int phase = 0, left = 0, right = (int) mFile.length() - 4096;
+		initStream();
+	    moveTo((left + right) / 2);
 		mState = STATE_SEARCHING;
 		if(mListener != null) {
 			mListener.onSearchStart();
 		}
 		
-	    initStream();
-	    moveTo((left + right) / 2);
 	    String exprString = ELEMENT_START + key;   
 	    String element = "";
 	    int numResults = 0;
@@ -211,7 +215,9 @@ public class DictionaryService {
 	            handleFoundElement(element, format);
 	            element = "";
 	            numResults++;
-	            if(numResults > maxResults) break;
+	            if(numResults > maxResults) {
+	            	mState = STATE_SEARCHING_COMPLETED;
+	            }
 	            phase = 3;
 	            continue;
 	        }
@@ -260,7 +266,7 @@ public class DictionaryService {
 	        	String exp = exprString.toLowerCase();
 	            int entryStart = l.indexOf(exp);
 	            if(entryStart == -1) {
-	                break;      // first non matching entry was hit
+	                mState = STATE_SEARCHING_COMPLETED;      // first non matching entry was hit
 	            }
 	            
 	            element += line.substring(line.indexOf(ELEMENT_START));

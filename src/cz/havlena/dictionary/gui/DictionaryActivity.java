@@ -125,7 +125,7 @@ public class DictionaryActivity extends Activity {
 		}
 
 		public void onError(Exception ex) {
-			Message msg = mHandler.obtainMessage(SEARCHING_STARTED);
+			Message msg = mHandler.obtainMessage(SEARCHING_ERROR);
 			msg.obj = ex;
 			mHandler.sendMessage(msg);
 		}
