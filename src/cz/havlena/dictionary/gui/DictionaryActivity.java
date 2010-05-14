@@ -12,13 +12,18 @@ import cz.havlena.dictionary.DictionaryService;
 import cz.havlena.dictionary.IDictionaryService;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.TextToSpeech.OnInitListener;
 import android.text.Editable;
 import android.text.Html;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -33,18 +38,77 @@ public class DictionaryActivity extends Activity {
 	private static final int SEARCHING_STARTED = 3;
 	private static final int SEARCHING_ERROR = -1;
 	
-	private DictionaryService mService;
+	private static final int TTS_REQUEST = 1;
 	
-	private TextView txtResult;
+	private static final int MENU_TTS = 1;
+	
+	private DictionaryService mService;
+	private TextToSpeech mTts;
+	private TextToSpeechHandler mSpeechHandler;
+	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
-        txtResult = (TextView) findViewById(R.id.txtResult);
         EditText edtSearch = (EditText) findViewById(R.id.edtSearch);
         edtSearch.addTextChangedListener(new SearchHandler());
+  
+        checkTextToSpeech();
+    }
+    
+    private void checkTextToSpeech() {
+    	Intent checkIntent = new Intent();
+    	checkIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
+    	startActivityForResult(checkIntent, TTS_REQUEST);
+    }
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+    	menu.add(0, MENU_TTS, 0, "TextToSpeech");
+    	return true;
+    }
+    
+    /* Handles item selections */
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	switch(item.getItemId()) {
+    	case MENU_TTS:
+    		if(mTts != null && mTts.isSpeaking()) {
+    			mTts.stop();
+    		}
+    		return true;
+    	}
+    	return false;
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    	if (requestCode == TTS_REQUEST) {
+            if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
+                // success, create the TTS instance
+            	mSpeechHandler = new TextToSpeechHandler();
+                mTts = new TextToSpeech(this, mSpeechHandler);
+            }/* else {
+                // missing data, install it
+                Intent installIntent = new Intent();
+                installIntent.setAction(
+                    TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+                startActivity(installIntent);
+            }*/
+        }
+    }
+    
+    @Override
+    protected void onDestroy() {
+    	super.onDestroy();
+    	if(mTts != null) mTts.shutdown();
+    }
+    
+    private void processError(Exception ex) {
+    	Message msg = mHandler.obtainMessage(SEARCHING_ERROR);
+		msg.obj = ex;
+		mHandler.sendMessage(msg);
     }
     
     private Handler mHandler = new Handler() {
@@ -52,6 +116,7 @@ public class DictionaryActivity extends Activity {
     	
     	@Override
     	public void handleMessage(Message msg) {
+    		TextView txtResult = (TextView) findViewById(R.id.txtResult);
     		switch(msg.what) {
     		case SEARCHING_STARTED:
     			Log.w(TAG, "Searching started");
@@ -89,6 +154,14 @@ public class DictionaryActivity extends Activity {
     			Log.w(TAG, "Searching stopped");
     			if(txtResult.getText().length() == 0) {
     				txtResult.setText("no word found");
+    				return;
+    			}
+    			
+    			if(mSpeechHandler.isReady()) {
+    				if(mTts.isSpeaking()) {
+    					mTts.stop();
+    				}
+    				mTts.speak((String) txtResult.getText(), TextToSpeech.QUEUE_FLUSH, null);
     			}
     			break;
     			
@@ -101,10 +174,32 @@ public class DictionaryActivity extends Activity {
 	    		else {
 	    			txtResult.setText("Error: " + ex.getMessage());
     			}
+    			Log.e(TAG, "Searching error: " + ex.getMessage());
     			break;
     		}
     	}
     };
+    
+    private class TextToSpeechHandler implements OnInitListener {
+    	private boolean ready = false;
+    	
+    	public boolean isReady() {
+    		return ready;
+    	}
+    	
+    	public void onInit(int status) {
+        	Log.w(TAG, "TextToSpeech initzialized");
+        	
+        	/*int result = mTts.isLanguageAvailable(Locale.);
+        	if(result != TextToSpeech.LANG_AVAILABLE) {
+        		Log.e(TAG, "UK language isn't available [" + result + "]");
+        		return;
+        	}*/
+        	
+        	ready = true;
+        }
+    	
+    }
     
     private class DictionaryHandler implements IDictionaryService {
 
@@ -125,9 +220,7 @@ public class DictionaryActivity extends Activity {
 		}
 
 		public void onError(Exception ex) {
-			Message msg = mHandler.obtainMessage(SEARCHING_ERROR);
-			msg.obj = ex;
-			mHandler.sendMessage(msg);
+			processError(ex);
 		}
     	
     }
@@ -135,11 +228,6 @@ public class DictionaryActivity extends Activity {
     private class SearchHandler implements TextWatcher {
 
 		public void afterTextChanged(final Editable arg0) {
-			if(arg0.length() == 0) {
-				txtResult.setText("");
-				return;
-			}
-		
 			mService.searchAsync(arg0.toString(), 10, FORMAT);
 		}
 
@@ -153,8 +241,7 @@ public class DictionaryActivity extends Activity {
 					mService.init(new File("/sdcard/" + DICTIONARY_FILE));
 					Log.w(TAG, "Dictionary service initzialized");
 				} catch (FileNotFoundException e) {
-					Log.e(TAG, "Error: " + e.getMessage());
-					txtResult.setText("ERR: " + e.getMessage());
+					processError(e);
 				}
 			}
 		}
