@@ -12,7 +12,11 @@ import cz.havlena.dictionary.DictionaryService;
 import cz.havlena.dictionary.IDictionaryService;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -24,6 +28,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -50,6 +55,7 @@ public class DictionaryActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.main);
         
         EditText edtSearch = (EditText) findViewById(R.id.edtSearch);
@@ -89,13 +95,24 @@ public class DictionaryActivity extends Activity {
                 // success, create the TTS instance
             	mSpeechHandler = new TextToSpeechHandler();
                 mTts = new TextToSpeech(this, mSpeechHandler);
-            }/* else {
-                // missing data, install it
-                Intent installIntent = new Intent();
-                installIntent.setAction(
-                    TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
-                startActivity(installIntent);
-            }*/
+            } else {
+            	Builder dialog = new AlertDialog.Builder(this);
+            	dialog.setMessage(this.getString(R.string.tts_not_available));
+            	dialog.setPositiveButton("Install", new OnClickListener() {
+        			public void onClick(DialogInterface dialog, int which) {
+        				Intent installIntent = new Intent();
+        		        installIntent.setAction(
+        		            TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+        		        startActivity(installIntent);
+        			}
+        		});
+            	dialog.setNegativeButton("Not using", new OnClickListener() {
+					public void onClick(DialogInterface dialog, int which) {
+						Log.w(TAG, "User doesn't want to use TTS service");
+					}
+				});
+            	dialog.show();
+            }
         }
     }
     
@@ -121,6 +138,8 @@ public class DictionaryActivity extends Activity {
     		case SEARCHING_STARTED:
     			Log.w(TAG, "Searching started");
     			txtResult.setText("");
+    			setTitle(getString(R.string.searching));
+    			setProgressBarIndeterminateVisibility(true);
     			break;
     			
     		case SEARCHING_FOUND:
@@ -152,6 +171,8 @@ public class DictionaryActivity extends Activity {
     			
     		case SEARCHING_COMPLETED:
     			Log.w(TAG, "Searching stopped");
+    			setTitle(getString(R.string.app_name));
+    			setProgressBarIndeterminateVisibility(false);
     			if(txtResult.getText().length() == 0) {
     				txtResult.setText("no word found");
     				return;
