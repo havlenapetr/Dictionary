@@ -272,10 +272,10 @@ public class DictionaryService {
 	    }
 	    
 	    mStream.close();
+	    
+		if(mListener != null)
+		  	mListener.onSearchStop((mState == STATE_STOP) ? true : false);
 	    mState = STATE_DONE;
-	    if(mListener != null) {
-	    	mListener.onSearchStop();
-	    }
 	}
 	
 	private String findExpression(String line) {

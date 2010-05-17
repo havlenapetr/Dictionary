@@ -369,7 +369,8 @@ public class DictionaryActivity extends Activity {
 			mHandler.sendMessage(msg);
 		}
 
-		public void onSearchStop() {
+		public void onSearchStop(boolean interupted) {
+			if(interupted) return;
 			Message msg = mHandler.obtainMessage(SEARCHING_COMPLETED);
 			mHandler.sendMessage(msg);
 		}
