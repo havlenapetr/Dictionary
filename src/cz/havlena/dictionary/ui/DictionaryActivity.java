@@ -52,6 +52,7 @@ public class DictionaryActivity extends Activity {
 	
 	private static final int ANIMATION_FADEOUT = 4;
 	private static final int ANIMATION_FADEIN = 5;
+	private static final String ANIMATION_STATE = "AnimationState";
 	
 	
 	private static final int TTS_REQUEST = 1;
@@ -81,6 +82,9 @@ public class DictionaryActivity extends Activity {
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.dictionary_activity);
         
+        if (savedInstanceState != null) {
+            mAnimationState = savedInstanceState.getInt(ANIMATION_STATE);
+        }
         setupUi(); // setup user interface
         checkTextToSpeech(); // check whether tts is available
     }
@@ -187,6 +191,12 @@ public class DictionaryActivity extends Activity {
     	return false;
     }
     */
+    
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+    	super.onSaveInstanceState(outState);
+    	outState.putInt(ANIMATION_STATE, mAnimationState); // save headerview state
+    }
     
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
