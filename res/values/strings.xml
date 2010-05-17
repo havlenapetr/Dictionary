@@ -2,7 +2,9 @@
 <resources>
     
     <string name="app_name">Dictionary</string>
-    <string name="searching">Searching</string>
+    <string name="searching">Searching\u2026</string>
     <string name="tts_not_available">TTS not available</string>
+    <string name="stopSearching">Stop</string>
+    <string name="type_to_search">Type to search</string>
     
 </resources>

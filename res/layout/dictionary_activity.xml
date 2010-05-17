@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@drawable/white_background">           
+
+	<LinearLayout
+		android:id="@+id/linearlayout_container"
+    	android:orientation="vertical"
+    	android:layout_width="fill_parent"
+    	android:layout_height="fill_parent">
+                   
+		        <LinearLayout
+		        	android:id="@+id/linearlayout_header"
+                    android:orientation="horizontal"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="5dip"
+                    android:paddingBottom="5dip"
+                    android:paddingLeft="5dip"
+                    android:paddingRight="5dip"
+                    android:background="@android:drawable/editbox_dropdown_light_frame">
+
+                    <RelativeLayout
+                        android:layout_width="0dip"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1.0"
+                        android:addStatesFromChildren="true"
+                        android:background="@android:drawable/edit_text">
+
+                        <EditText
+                            android:id="@+id/edittext_search"
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:autoText="true"
+                            android:capitalize="sentences"
+                            android:nextFocusRight="@+id/button_stop"
+                            android:hint="@string/type_to_search"
+                            android:layout_gravity="center_vertical"
+                            android:maxLines="1"
+                            android:inputType="textShortMessage|textAutoCorrect|textCapSentences|textMultiLine"
+                            android:imeOptions="actionSend|flagNoEnterAction"
+                            android:background="@null"
+                            android:maxLength="19"
+                        />
+
+                        <TextView
+                            android:id="@+id/textview_counter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentRight="true"
+                            android:layout_alignParentTop="true"
+                            android:visibility="gone"
+                        />
+                    </RelativeLayout>
+
+                    <Button android:id="@+id/button_stop"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        style="?android:attr/buttonStyle"
+                        android:text="@string/stopSearching"
+                        android:layout_gravity="center_vertical"/>
+                </LinearLayout>
+     	            
+		        <LinearLayout
+			        android:layout_width="fill_parent"
+			        android:layout_height="fill_parent"
+			        android:orientation="vertical"
+			        android:background="@drawable/white_background">
+			        
+			        <!--  ListView
+			            android:id="@+id/listview_results"
+			            android:layout_width="fill_parent"
+			            android:layout_height="fill_parent"
+			            android:layout_weight="1.0"
+			            android:divider="@android:drawable/divider_horizontal_bright"
+			            android:drawSelectorOnTop="true"
+			            android:transcriptMode="alwaysScroll"
+			            android:scrollbarAlwaysDrawVerticalTrack="true"
+			            android:scrollbarStyle="insideInset"
+			            android:stackFromBottom="true"
+			            android:fadingEdge="none"
+			            android:layout_marginBottom="1dip"
+			            android:cacheColorHint="@android:color/white"
+			        /-->
+			        
+			        <ScrollView
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:id="@+id/scrollview_result_container">
+		                  
+		                    <WebView
+		                            android:id="@+id/webview_result"
+		                            android:layout_width="fill_parent"
+		                            android:layout_height="fill_parent"
+		                            android:textColor="@drawable/text_color_black"
+		                            android:paddingLeft="3dip"
+		                            android:paddingRight="3dip"
+		                            android:layout_alignParentRight="true"
+		                            android:layout_alignParentTop="true"/>
+		                  
+		            </ScrollView>
+		     	</LinearLayout>
+		</LinearLayout>
+</LinearLayout>

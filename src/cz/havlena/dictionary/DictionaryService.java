@@ -10,8 +10,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.xml.sax.SAXException;
 
-import android.util.Log;
-
 public class DictionaryService {
 	
 	private static int 					UNCOMPARABLE_CHARS = 0x12345678;
@@ -120,7 +118,7 @@ public class DictionaryService {
 	}
 	
 	private static final int MAX_WAIT = 3000;
-	private void stopSearching() {
+	public void stopSearching() {
 		if(mState == STATE_DONE) {
 			return;
 		}
@@ -129,7 +127,6 @@ public class DictionaryService {
 		while(mState != STATE_DONE) {
 			try {
 				mThread.join(MAX_WAIT);
-				mThread = null;
 			} catch (InterruptedException e) {
 				if(mListener != null) 
 					mListener.onError(e);
@@ -215,7 +212,7 @@ public class DictionaryService {
 	            handleFoundElement(element, format);
 	            element = "";
 	            numResults++;
-	            if(numResults > maxResults) {
+	            if(numResults >= maxResults) {
 	            	mState = STATE_SEARCHING_COMPLETED;
 	            }
 	            phase = 3;

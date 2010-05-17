@@ -3,11 +3,6 @@ package cz.havlena.dictionary.ui;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.xml.sax.SAXException;
-
-import cz.havlena.dictionary.DictionaryElement;
 import cz.havlena.dictionary.DictionaryService;
 import cz.havlena.dictionary.IDictionaryService;
 import cz.havlena.dictionary.ui.R;
@@ -15,34 +10,57 @@ import cz.havlena.dictionary.ui.R;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.DialogInterface.OnClickListener;
+import android.net.MailTo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.text.Editable;
-import android.text.Html;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
+import android.view.View.OnLongClickListener;
+import android.view.View.OnTouchListener;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
+import android.view.animation.Animation.AnimationListener;
+import android.webkit.WebView;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 public class DictionaryActivity extends Activity {
 	
+	private static final boolean D = true;
 	private static final String TAG = "DictionaryActivity";
 	private static final String DICTIONARY_FILE = "gcide-entries.xml";
 	private static final int FORMAT = DictionaryService.FORMAT_HTML;
+	private static final int ANIMATION_DURATION = 1000;
 	
 	private static final int SEARCHING_FOUND = 1;
 	private static final int SEARCHING_COMPLETED = 2;
 	private static final int SEARCHING_STARTED = 3;
 	private static final int SEARCHING_ERROR = -1;
+	
+	private static final int ANIMATION_FADEOUT = 4;
+	private static final int ANIMATION_FADEIN = 5;
+	
 	
 	private static final int TTS_REQUEST = 1;
 	
@@ -51,19 +69,107 @@ public class DictionaryActivity extends Activity {
 	private DictionaryService mService;
 	private TextToSpeech mTts;
 	private TextToSpeechHandler mSpeechHandler;
+	private int mMaxResults = 10;
+	private int mAnimationState = ANIMATION_FADEIN;
+	
+	private Animation mHeaderAnimation;
+	private LinearLayout mHeaderLayout;
+	private LinearLayout mContainerLayout;
+	private Button mStopView;
+	private TextView mCounterView;
+	private WebView mResultView;
+	//private ListView mResultView;
+	private EditText mSearchView;
+	private LayoutInflater mInflater;
 	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-        setContentView(R.layout.main);
+        setContentView(R.layout.dictionary_activity);
         
-        EditText edtSearch = (EditText) findViewById(R.id.edtSearch);
-        edtSearch.addTextChangedListener(new SearchHandler());
-  
-        checkTextToSpeech();
+        setupUi(); // setup user interface
+        checkTextToSpeech(); // check whether tts is available
     }
+    
+
+    /**
+     * Initialize all UI elements from resources.
+     */
+    private void initResourceRefs() {
+    	mInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE); 
+        
+    	mContainerLayout = (LinearLayout) findViewById(R.id.linearlayout_container);
+    	mHeaderLayout = (LinearLayout) findViewById(R.id.linearlayout_header);
+    	mSearchView = (EditText) findViewById(R.id.edittext_search);
+		mResultView = (WebView) findViewById(R.id.webview_result);
+    	//mResultView = (ListView) findViewById(R.id.listview_results);
+		mStopView = (Button) findViewById(R.id.button_stop);
+		mCounterView = (TextView) findViewById(R.id.textview_counter);
+    }
+    
+    private void setupUi() {
+    	initResourceRefs();
+    	
+    	mSearchView.addTextChangedListener(new SearchHandler());
+    	mSearchView.setOnTouchListener(new OnTouchListener() {
+			
+			public boolean onTouch(View v, MotionEvent event) {
+				EditText edt = (EditText) v;
+				edt.selectAll();
+				return false;
+			}
+		});
+    	
+    	mStopView.setEnabled(false);
+    	mStopView.setOnTouchListener(new OnTouchListener() {
+			
+			public boolean onTouch(View v, MotionEvent event) {
+				mService.stopSearching();
+				return true;
+			}
+		});
+		
+		// Since we are caching large views, we want to keep their cache
+        // between each animation
+        //mHeaderView.setPersistentDrawingCache(ViewGroup.PERSISTENT_ANIMATION_CACHE);
+    }
+    
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+    	if(keyCode == KeyEvent.KEYCODE_MENU) {
+    		if(mAnimationState == ANIMATION_FADEOUT) {
+    			if(D) Log.w(TAG, "anim state: " + mAnimationState);
+    			fadeHeaderIn();
+    		}
+    	}
+    	return true;
+    }
+    
+    private void fadeHeaderIn() {
+    	Log.w(TAG, "fading in");
+    	mHeaderLayout.setVisibility(View.VISIBLE); // here because onStart animation isn't called properly
+		mHeaderAnimation = new TranslateAnimation(Animation.RELATIVE_TO_PARENT, 0.0f,
+												  Animation.RELATIVE_TO_PARENT, 0.0f,
+												  Animation.RELATIVE_TO_PARENT, -0.25f,
+												  Animation.RELATIVE_TO_PARENT, 0.0f);
+		mHeaderAnimation.setAnimationListener(new AnimationHandler());
+		mHeaderAnimation.setDuration(ANIMATION_DURATION);
+		mHeaderLayout.setAnimation(mHeaderAnimation);
+    }
+    
+    private void fadeHeaderOut() {
+    	Log.w(TAG, "fading out");
+    	mHeaderAnimation = new TranslateAnimation(Animation.RELATIVE_TO_PARENT, 0.0f, 
+				  								  Animation.RELATIVE_TO_PARENT, 0.0f, 
+				  								  Animation.RELATIVE_TO_PARENT, 0.0f, 
+				  								  Animation.RELATIVE_TO_PARENT, -0.25f);
+		mHeaderAnimation.setAnimationListener(new AnimationHandler());
+		mHeaderAnimation.setDuration(ANIMATION_DURATION);
+		mHeaderLayout.setAnimation(mHeaderAnimation);
+    }
+    
     
     private void checkTextToSpeech() {
     	Intent checkIntent = new Intent();
@@ -71,13 +177,13 @@ public class DictionaryActivity extends Activity {
     	startActivityForResult(checkIntent, TTS_REQUEST);
     }
     
+    /*
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
     	menu.add(0, MENU_TTS, 0, "TextToSpeech");
     	return true;
     }
     
-    /* Handles item selections */
     public boolean onOptionsItemSelected(MenuItem item) {
     	switch(item.getItemId()) {
     	case MENU_TTS:
@@ -88,6 +194,7 @@ public class DictionaryActivity extends Activity {
     	}
     	return false;
     }
+    */
     
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -130,17 +237,25 @@ public class DictionaryActivity extends Activity {
     }
     
     private Handler mHandler = new Handler() {
-    	private boolean xmlError = false;
+    	private StringBuilder result = new StringBuilder();
+    	private int mCounter = 0;
+    	
+    	public String toString() {
+    		return result.toString();
+    	}
     	
     	@Override
     	public void handleMessage(Message msg) {
-    		TextView txtResult = (TextView) findViewById(R.id.txtResult);
     		switch(msg.what) {
     		case SEARCHING_STARTED:
     			Log.w(TAG, "Searching started");
-    			txtResult.setText("");
+    			mStopView.setEnabled(true);
+    			//mResultView.removeAllViews();
+    			result.delete(0, result.length());
     			setTitle(getString(R.string.searching));
     			setProgressBarIndeterminateVisibility(true);
+    			mCounter = 0;
+    			mCounterView.setText(mCounter + "/" + mMaxResults);
     			break;
     			
     		case SEARCHING_FOUND:
@@ -148,59 +263,80 @@ public class DictionaryActivity extends Activity {
     			case DictionaryService.FORMAT_HTML:
 	    			String element = (String) msg.obj;
 	    			if(element != null) {
-		    			if(!xmlError)
-		    				element = Html.fromHtml(element).toString();
-		   
-		    				txtResult.setText(txtResult.getText() + element + "\n" +
-		    						"----------------------------------------------" + "\n");
+		    			mCounter++;
+		    			result.append(element);
+		    			//ElementListItem item = (ElementListItem) mInflater.inflate(R.layout.element_list_item, mResultView, false);
+		    			//item.setText("<html>" + element + "</html>");
+		        		mResultView.loadData("<html>" + result.toString() + "</html>", "text/html", "utf-8");
+		        		mResultView.invalidate();
+		        		mCounterView.setText(mCounter + "/" + mMaxResults);
 		    		}
 	    			break;
 	    			
     			case DictionaryService.FORMAT_ELEMENT:
+    				/*
     				DictionaryElement el = (DictionaryElement) msg.obj;
 	    			if(el != null) {
 	    				txtResult.setText(txtResult.getText() + el.key + "\n"/* + el.definition + "\n" + 
 	    						el.expression + "\n" + el.senses + "\n" +
-	    						"----------------------------------------------" + "\n"*/);
+	    						"----------------------------------------------" + "\n");
 	        			//txtResult.invalidate();
-    				}
+    				}*/
     				break;
     			}
-    			
-    			xmlError = false;
     			break;
     			
     		case SEARCHING_COMPLETED:
     			Log.w(TAG, "Searching stopped");
+    			mStopView.setEnabled(false);
     			setTitle(getString(R.string.app_name));
     			setProgressBarIndeterminateVisibility(false);
-    			if(txtResult.getText().length() == 0) {
-    				txtResult.setText("no word found");
-    				return;
+    			if(mCounter == 0) {
+	    			//ElementListItem item = (ElementListItem) mInflater.inflate(R.layout.element_list_item, mResultView, false);
+    				mResultView.loadData("<html>no word found</html>", "text/html", "utf-8");
     			}
-    			
-    			if(mSpeechHandler.isReady()) {
-    				if(mTts.isSpeaking()) {
-    					mTts.stop();
-    				}
-    				mTts.speak((String) txtResult.getText(), TextToSpeech.QUEUE_FLUSH, null);
+    			else {
+    				fadeHeaderOut();
     			}
     			break;
     			
     		case SEARCHING_ERROR:
     			Exception ex = (Exception) msg.obj;
-    			if((ex instanceof ParserConfigurationException) ||
-    					(ex instanceof SAXException)) {
-    				xmlError = true;
-    			}
-	    		else {
-	    			txtResult.setText("Error: " + ex.getMessage());
-    			}
+    			//result.append("</br>" + "</br>" + "</br>" + "ERR: " + ex.getMessage());
     			Log.e(TAG, "Searching error: " + ex.getMessage());
     			break;
     		}
     	}
     };
+    
+    private class AnimationHandler implements AnimationListener {
+
+		public void onAnimationEnd(Animation animation) {			
+			switch(mAnimationState) {
+			case ANIMATION_FADEOUT:
+				mAnimationState = ANIMATION_FADEIN;
+				break;
+			case ANIMATION_FADEIN:
+				mAnimationState = ANIMATION_FADEOUT;
+				break;
+			}
+			
+			if(mAnimationState == ANIMATION_FADEOUT) {
+				if(D) Log.w(TAG, "ANIMATION_FADEOUT");
+				mHeaderLayout.setVisibility(View.GONE);
+			}
+		}
+
+		public void onAnimationRepeat(Animation animation) {}
+
+		public void onAnimationStart(Animation animation) {
+			if(mAnimationState == ANIMATION_FADEOUT) {
+				if(D) Log.w(TAG, "ANIMATION_FADEIN");
+				mHeaderLayout.setVisibility(View.VISIBLE);
+			}
+		}
+    	
+    }
     
     private class TextToSpeechHandler implements OnInitListener {
     	private boolean ready = false;
@@ -250,7 +386,7 @@ public class DictionaryActivity extends Activity {
     private class SearchHandler implements TextWatcher {
 
 		public void afterTextChanged(final Editable arg0) {
-			mService.searchAsync(arg0.toString(), 10, FORMAT);
+			mService.searchAsync(arg0.toString(), mMaxResults, FORMAT);
 		}
 
 		public void beforeTextChanged(CharSequence arg0, int arg1, int arg2, int arg3) {
@@ -259,6 +395,7 @@ public class DictionaryActivity extends Activity {
 				
 				mService = new DictionaryService();
 				mService.setListener(new DictionaryHandler());
+				mCounterView.setVisibility(View.VISIBLE);
 				try {
 					mService.init(new File("/sdcard/" + DICTIONARY_FILE));
 					Log.w(TAG, "Dictionary service initzialized");

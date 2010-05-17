@@ -93,13 +93,14 @@ public class DictionaryXmlParser {
 		    else if(element.matches("sn")) {
 		    	mParseState = DictionaryElement.SENSES;
 		    	if(mFormat == DictionaryService.FORMAT_HTML) {
-			        if(html.endsWith("</ol>")) {
-			           // html.chop(5);
-			        }
-			        else {
-			            html += "<ol>";
-			        }
-			        html += "<li>";
+		    		if(html.endsWith("</li></ol>")) {
+		    			int id = html.lastIndexOf("</ol>");
+		    			if(id != -1) {
+		    				html = html.substring(0, id);
+		    			}
+		    			html += "<li>";
+		    		}
+		    		else html += "<ol><li>";
 		    	}
 		        skip = false;
 		    }
@@ -153,18 +154,15 @@ public class DictionaryXmlParser {
 			if(mFormat != DictionaryService.FORMAT_HTML) {
 				return;
 			}
-			
-			if(qName == "ex") {
+			String element = (ANDROID) ? localName : qName;
+			if(element.matches("ex")) {
 		        html += "</b>";
 		    }
-		    else if(qName == "def") {
+		    else if(element.matches("def")) {
 		        skip = true;
 		    }
-		    else if(qName == "sn") {
+		    else if(element.matches("sn")) {
 		        html += "</li></ol>";
-		    }
-		    else if(qName == "entry") {
-		    	html += "</html>";
 		    }
 		}
 		

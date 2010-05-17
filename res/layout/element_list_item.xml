@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<cz.havlena.dictionary.ui.ElementListItem
+	xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/element_list_item"
+	android:layout_width="fill_parent" android:layout_height="wrap_content"
+	android:orientation="horizontal">
+
+	<RelativeLayout 
+		android:id="@+id/editor_with_counter"
+		android:layout_width="0dip"
+		android:layout_height="wrap_content"
+		android:layout_weight="1.0"
+		android:addStatesFromChildren="true">
+
+		<WebView android:id="@+id/mResultView" 
+			android:layout_width="fill_parent"
+			android:layout_height="fill_parent" 
+			android:textColor="@drawable/text_color_black"
+			android:paddingLeft="3dip" 
+			android:paddingRight="3dip"
+			android:layout_alignParentRight="true" 
+			android:layout_alignParentTop="true"/>
+
+		<ImageView 
+			android:id="@+id/mText2SpeechView"
+			android:layout_width="wrap_content" 
+			android:layout_height="wrap_content"
+			android:layout_alignParentRight="true" 
+			android:layout_alignParentTop="true"
+			android:visibility="gone" />
+	</RelativeLayout>
+
+</cz.havlena.dictionary.ui.ElementListItem>
