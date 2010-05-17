@@ -48,6 +48,7 @@ public class DictionaryActivity extends Activity {
 	private static final int SEARCHING_FOUND = 1;
 	private static final int SEARCHING_COMPLETED = 2;
 	private static final int SEARCHING_STARTED = 3;
+	private static final int SEARCHING_INTERUPTED = 4;
 	private static final int SEARCHING_ERROR = -1;
 	
 	private static final int ANIMATION_FADEOUT = 4;
@@ -122,7 +123,9 @@ public class DictionaryActivity extends Activity {
     	mStopView.setOnTouchListener(new OnTouchListener() {
 			
 			public boolean onTouch(View v, MotionEvent event) {
+				Log.w(TAG, "stopping searching");
 				mService.stopSearching();
+				Log.w(TAG, "stopped");
 				return true;
 			}
 		});
@@ -302,6 +305,13 @@ public class DictionaryActivity extends Activity {
     			}
     			break;
     			
+    		case SEARCHING_INTERUPTED:
+    			Log.w(TAG, "Searching stopped");
+    			mStopView.setEnabled(false);
+    			setTitle(getString(R.string.app_name));
+    			setProgressBarIndeterminateVisibility(false);
+    			break;
+    			
     		case SEARCHING_ERROR:
     			Exception ex = (Exception) msg.obj;
     			//result.append("</br>" + "</br>" + "</br>" + "ERR: " + ex.getMessage());
@@ -370,14 +380,16 @@ public class DictionaryActivity extends Activity {
 		}
 
 		public void onSearchStop(boolean interupted) {
-			if(interupted) return;
-			Message msg = mHandler.obtainMessage(SEARCHING_COMPLETED);
-			mHandler.sendMessage(msg);
+			if(interupted) {
+				mHandler.sendEmptyMessage(SEARCHING_INTERUPTED);
+			}
+			else {
+				mHandler.sendEmptyMessage(SEARCHING_COMPLETED);
+			}
 		}
 
 		public void onSearchStart() {
-			Message msg = mHandler.obtainMessage(SEARCHING_STARTED);
-			mHandler.sendMessage(msg);
+			mHandler.sendEmptyMessage(SEARCHING_STARTED);
 		}
 
 		public void onError(Exception ex) {
