@@ -14,7 +14,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.DialogInterface.OnClickListener;
-import android.net.MailTo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -25,13 +24,9 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
-import android.view.View.OnLongClickListener;
 import android.view.View.OnTouchListener;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
@@ -39,15 +34,12 @@ import android.view.animation.Animation.AnimationListener;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 public class DictionaryActivity extends Activity {
 	
-	private static final boolean D = true;
+	private static final boolean D = false;
 	private static final String TAG = "DictionaryActivity";
 	private static final String DICTIONARY_FILE = "gcide-entries.xml";
 	private static final int FORMAT = DictionaryService.FORMAT_HTML;
@@ -148,7 +140,7 @@ public class DictionaryActivity extends Activity {
     }
     
     private void fadeHeaderIn() {
-    	Log.w(TAG, "fading in");
+    	if(D) Log.w(TAG, "fading in");
     	mHeaderLayout.setVisibility(View.VISIBLE); // here because onStart animation isn't called properly
 		mHeaderAnimation = new TranslateAnimation(Animation.RELATIVE_TO_PARENT, 0.0f,
 												  Animation.RELATIVE_TO_PARENT, 0.0f,
@@ -160,7 +152,7 @@ public class DictionaryActivity extends Activity {
     }
     
     private void fadeHeaderOut() {
-    	Log.w(TAG, "fading out");
+    	if(D) Log.w(TAG, "fading out");
     	mHeaderAnimation = new TranslateAnimation(Animation.RELATIVE_TO_PARENT, 0.0f, 
 				  								  Animation.RELATIVE_TO_PARENT, 0.0f, 
 				  								  Animation.RELATIVE_TO_PARENT, 0.0f, 
